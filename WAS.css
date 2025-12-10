@@ -27,6 +27,7 @@ body {
 h1 {
     color: rgb(255, 255, 255);
     font-size: 18px;
+    max-width: fit-content;
 }
 
 .button {
@@ -41,13 +42,6 @@ h1 {
     color: white;
 }
 
-.construction-label {
-    display: grid;
-    grid-template-columns: 80px 1fr;
-    gap: 10px;
-    align-items: center;
-}
-
 input {
     padding: 0rem 0.25rem;
     border: 1px solid #767676;
@@ -57,4 +51,8 @@ input {
     min-width: 80px;
     max-width: 100%;
     text-align: center;
+}
+
+label {
+    max-width: fit-content;
 }
