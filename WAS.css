@@ -10,7 +10,7 @@ body {
     background-color: #323232;
 }
 
-.container {
+#animation-container {
     box-sizing: border-box;
     width: 300px;
     max-width: 300px;
