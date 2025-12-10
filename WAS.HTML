@@ -1,1 +1,53 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAS</title>
+    <link rel="stylesheet" href="WAS.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="WAS.js"></script>
+</head>
+    <body>
+        <div class="container">
+            <h1>Animation Control</h1>
+            <div class="flex space-x-2 mt-1 mb-1">
+                <button id="pause-play" class="button hidden">pause</button>
+                <button id="start-reset" class="button">start</button>
+                <button id="step" class="button">step</button>
+                <label id="stepCount" class="ml-4">0</label>
+            </div>
+            <h1>Construction Control</h1>
+            <div class="flex flex-col space-x-2 mt-1 mb-1">
+                <label class="construction-label mb-1 text-white">
+                    Color 1:
+                    <input id="red-seed" class="input w-16 text-black" type="number" value="20"></input>
+                </label>
+                <label class="construction-label mb-1 text-white">
+                    Color 2:
+                    <input id="yellow-seed" class="input w-16 text-black" type="number" value="20"></input>
+                </label>
+                <label class="construction-label mb-1 text-white">
+                    Color 3:
+                    <input id="green-seed" class="input w-16 text-black" type="number" value="20"></input>
+                </label>
+                <label class="construction-label mb-1 text-white">
+                    Color 4:
+                    <input id="cyan-seed" class="input w-16 text-black" type="number" value="20"></input>
+                </label>
+                <label class="construction-label mb-1 text-white">
+                    Color 5:
+                    <input id="blue-seed" class="input w-16 text-black" type="number" value="20"></input>
+                </label>
+                <label class="construction-label mb-1 text-white">
+                    Color 6:
+                    <input id="magenta-seed" class="input w-16 text-black" type="number" value="20"></input>
+                </label>
+                <label class="construction-label mb-1 text-white">
+                    Color 7:
+                    <input id="white-seed" class="input w-16 text-black" type="number" value="20"></input>
+                </label>
+            </div>
+        </div>
+    </body>
+</html>
