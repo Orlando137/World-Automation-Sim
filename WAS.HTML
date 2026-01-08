@@ -9,37 +9,45 @@
     <script src="WAS.js"></script>
 </head>
     <body>
-        <div id="animation-container">
-            <h1>Animation Control</h1>
-            <div class="flex space-x-2 mt-1 mb-1">
-                <button id="pause-play" class="button hidden">pause</button>
-                <button id="start-reset" class="button">start</button>
-                <button id="step" class="button">step</button>
-                <label id="stepCount" class="ml-4">0</label>
+        <div class="space-y-11">
+            <div id="animation-container" class="flex container">
+                <h1 class="h1">Animation Control</h1>
+                <div class="flex space-x-2 mt-1 mb-1">
+                    <button id="pause-play" class="button hidden">Pause</button>
+                    <button id="start-reset" class="button">Start</button>
+                    <button id="step" class="button">Step: 0</button>
+                    <button id="color-select" class="button">Black</button>
+                </div>
+                <h1 class="h1">About</h1>
+                <div class="flex space-x-2 mt-1 mb-1">
+                    <button id="instructions" class="button">Instructions</button>
+                    <button id="help" class="button">Help</button>
+                </div>
+                <h1 class="h1">Record</h1>
+                <div class="flex space-x-2 mt-1 mb-1">
+                    <input id="animation-name" class="input" type="text" placeholder="Enter Animation Name" style="width:330px;"/>
+                    <button id="save-animation" class="button">Save</button>
+                </div>
             </div>
-            <h1>Construction Control</h1>
-            <div class="flex flex-col space-x-2 mt-1 mb-1">
-                <label class="mb-1 text-white">
-                    Color 1: <input id="red-seed" class="input w-16 text-black" type="number" value="20"></input>
-                </label>
-                <label class="mb-1 text-white">
-                    Color 2: <input id="yellow-seed" class="input w-16 text-black" type="number" value="20"></input>
-                </label>
-                <label class="mb-1 text-white">
-                    Color 3: <input id="green-seed" class="input w-16 text-black" type="number" value="20"></input>
-                </label>
-                <label class="mb-1 text-white">
-                    Color 4: <input id="cyan-seed" class="input w-16 text-black" type="number" value="20"></input>
-                </label>
-                <label class="mb-1 text-white">
-                    Color 5: <input id="blue-seed" class="input w-16 text-black" type="number" value="20"></input>
-                </label>
-                <label class="mb-1 text-white">
-                    Color 6: <input id="magenta-seed" class="input w-16 text-black" type="number" value="20"></input>
-                </label>
-                <label class="mb-1 text-white">
-                    Color 7: <input id="white-seed" class="input w-16 text-black" type="number" value="20"></input>
-                </label>
+            <canvas id="animation-canvas" width="400" height="400"></canvas>
+        </div>
+        <div id="rule-container">
+            <h1 class="h1">Rule Control</h1>
+            <div class="flex space-x-2 mt-1 mb-1">
+                <img id="rule-table" src="Screenshot 2026-01-08 100013.png" alt="Rule Table" style="width:540px; height:auto; border:1px solid #000000;"/>
+            </div>
+            <div class="flex space-x-2 mt-1 mb-1">
+                <input id="rule-input" class="input" type="text" placeholder="Enter Rule Code" style="width:480px"/>
+                <button id="save-rule" class="button">Save</button>
+            </div>
+            <h1 class="h1">Random Control</h1>
+            <div class="flex space-x-2 mt-1 mb-1">
+                <input id="random-input" class="input" type="text" placeholder="Enter Generation Code" style="width:460px"/>
+                <button id="reshuffle-random" class="button">Reshuffle</button>
+            </div>
+            <div class="flex space-x-2 mt-1 mb-1">
+                <button id="add-random" class="button">Add Random Rule</button>
+                <button id="flush" class="button">Flush</button>
             </div>
         </div>
     </body>
