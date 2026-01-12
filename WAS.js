@@ -13,7 +13,10 @@ const randomI = document.getElementById('random-input');
 const reshuffleRandomB = document.getElementById('reshuffle-random');
 const addRandomB = document.getElementById('add-random');
 const flushB = document.getElementById('flush');
+const closeB = document.getElementById('closeModal');
 const ctx = animationCanvas.getContext('2d');
+const overlay = document.getElementById('modalOverlay');
+const modalContent = document.getElementById('modalContent');
 const cellSize = 4;
 var started = false;
 var playing = false;
@@ -52,6 +55,8 @@ startResetB.onclick = () => {
         playing = false;
         pausePlayB.textContent = "Play";
         pausePlayB.classList.add('hidden');
+        steps = 0;
+        stepB.textContent = `Step: ${steps}`;
     }
 }
 
@@ -72,4 +77,16 @@ colorSelectB.onclick = () => {
         case 6: addColor = 7; colorSelectB.textContent = 'White'; break;
         case 7: addColor = 0; colorSelectB.textContent = 'Black'; break;
     }
+}
+
+instructionsB.onclick = () => {
+    overlay.classList.add("active");
+}
+
+helpB.onclick = () => {
+    overlay.classList.add("active");
+}
+
+closeB.onclick = () => {
+    overlay.classList.remove("active");
 }

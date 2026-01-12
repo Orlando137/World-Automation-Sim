@@ -8,28 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
     <body>
-        <div class="space-y-11">
-            <div id="animation-container" class="flex container">
-                <h1 class="h1">Animation Control</h1>
-                <div class="flex space-x-2 mt-1 mb-1">
-                    <button id="pause-play" class="button hidden">Pause</button>
-                    <button id="start-reset" class="button">Start</button>
-                    <button id="step" class="button">Step: 0</button>
-                    <button id="color-select" class="button">Black</button>
-                </div>
-                <h1 class="h1">About</h1>
-                <div class="flex space-x-2 mt-1 mb-1">
-                    <button id="instructions" class="button">Instructions</button>
-                    <button id="help" class="button">Help</button>
-                </div>
-                <h1 class="h1">Record</h1>
-                <div class="flex space-x-2 mt-1 mb-1">
-                    <input id="animation-name" class="input" type="text" placeholder="Enter Animation Name" style="width:330px;"/>
-                    <button id="save-animation" class="button">Save</button>
-                </div>
-            </div>
-            <canvas id="animation-canvas" width="400" height="400"></canvas>
-        </div>
+        <canvas id="animation-canvas"></canvas>
         <div id="rule-container">
             <h1 class="h1">Rule Control</h1>
             <div class="flex space-x-2 mt-1 mb-1">
@@ -47,6 +26,31 @@
             <div class="flex space-x-2 mt-1 mb-1">
                 <button id="add-random" class="button">Add Random Rule</button>
                 <button id="flush" class="button">Flush</button>
+            </div>
+            <h1 class="h1">Record</h1>
+            <div class="flex space-x-2 mt-1 mb-1">
+                <input id="animation-name" class="input" type="text" placeholder="Enter Animation Name" style="width:330px;"/>
+                <button id="save-animation" class="button">Save</button>
+            </div>
+            <h1 class="h1">About</h1>
+            <div class="flex space-x-2 mt-1 mb-1">
+                <button id="instructions" class="button">Instructions</button>
+                <button id="help" class="button">Help</button>
+            </div>
+            <h1 class="h1">Animation Control</h1>
+            <div class="flex space-x-2 mt-1 mb-1">
+                <button id="pause-play" class="button hidden">Pause</button>
+                <button id="start-reset" class="button">Start</button>
+                <button id="step" class="button">Step: 0</button>
+                <button id="color-select" class="button">Black</button>
+            </div>
+        </div>
+        <div id="modalOverlay" class="overlay">
+            <div id="modalContent" class="modal">
+                <div id="modalBody">
+                    <p>Hi</p>
+                    <button id="closeModal" class="button">Close</button>
+                </div>
             </div>
         </div>
         <script src="WAS.js"></script>
