@@ -28,6 +28,12 @@ animationCanvas.height = 400;
 const gridSizeX = Math.floor(animationCanvas.width / cellSize);
 const gridSizeY = Math.floor(animationCanvas.height / cellSize);
 
+const ruleTable = document.getElementById('rule-table');
+const ROWS = 8;
+const COLS = 8;
+const masterData = [];
+let activeCellId = null;
+
 // --- Button Event Listeners ---
 
 pausePlayB.onclick = () => {
@@ -89,4 +95,17 @@ helpB.onclick = () => {
 
 closeB.onclick = () => {
     overlay.classList.remove("active");
+}
+
+// --- Rule management ---
+
+for (let r = 0; r < ROWS; r++) {
+    let row = ruleTable.insertRow();
+    for (let c = 0; c < COLS; c++) {
+        const id = '${r}-${c}';
+        masterData[id] = [];
+        let cell = row.insertCell();
+        cell.id = 'cell-${id}';
+        cell.innerText = '0';
+    }
 }
