@@ -17,6 +17,11 @@ const closeB = document.getElementById('closeModal');
 const ctx = animationCanvas.getContext('2d');
 const overlay = document.getElementById('modalOverlay');
 const modalContent = document.getElementById('modalContent');
+const ruleOverlay = document.getElementById('ruleOverlay');
+const modalTitle = document.getElementById('modalTitle');
+const container = document.getElementById('listContainer');
+const ruleInput = document.getElementById('new-rule');
+const addRuleB = document.getElementById('addBtn');
 const cellSize = 4;
 var started = false;
 var playing = false;
@@ -108,4 +113,37 @@ for (let r = 0; r < ROWS; r++) {
         cell.id = 'cell-${id}';
         cell.innerText = '0';
     }
+}
+
+function openModal(r, c) {
+    ruleOverlay.classList.add("active");
+    activeCellId = `${r}-${c}`;
+    modalTitle.innerText = `Cell ${r+1}, ${c+1}`;
+    renderList();
+    ruleInput.focus();
+}
+function closeModal() {
+    ruleOverlay.classList.remove("active");
+}
+function renderList() {
+    const items = masterData[activeCellId];
+    container.innerHTML = "";
+    items.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'list-item';
+        div.innerHTML = `<span>${item}</span><button class="delete-btn" onclick="removeItem(${index})">Delete</button>`;
+        container.appendChild(div);
+    });
+    document.getElementById(`cell-${activeCellId}`).innerText = items.length;
+}
+function addItem() {
+    if (input.value.trim()) {
+        masterData[activeCellId].push(input.value.trim());
+        input.value = "";
+        renderList();
+    }
+}
+function removeItem(index) {
+    masterData[activeCellId].splice(index, 1);
+    renderList();
 }
