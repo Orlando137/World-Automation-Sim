@@ -123,8 +123,42 @@ tr:not(:first-child) td {
 
 .list-item { 
     display: flex; 
-    justify-content: space-between; 
-    padding: 8px 0; 
-    border-bottom: 1px solid #eee; 
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px; 
+    margin-bottom: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.list-item span {
+    flex: 1;
+}
+
+.delete-btn {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #767676;
+    border-radius: 0.25rem;
+    background-color: #ffffff;
+    cursor: pointer;
+    margin-left: 10px;
+    white-space: nowrap;
+}
+
+.delete-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.input-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+#listContainer {
+    margin-bottom: 16px;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
