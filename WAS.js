@@ -34,8 +34,8 @@ const gridSizeX = Math.floor(animationCanvas.width / cellSize);
 const gridSizeY = Math.floor(animationCanvas.height / cellSize);
 
 const ruleTable = document.getElementById('rule-table');
-const ROWS = 8;
-const COLS = 8;
+const ROWS = 4;
+const COLS = 4;
 const masterData = [];
 let activeCellId = null;
 
@@ -243,7 +243,21 @@ for (let r = 0; r < ROWS; r++) {
 function openModal(r, c) {
     ruleOverlay.classList.add("active");
     activeCellId = `${r}-${c}`;
-    modalTitle.innerText = `Cell ${r+1}, ${c+1}`;
+    switch (10*r + c) {
+        case 0: modalTitle.innerText = 'any -> dead'; break;
+        case 1: modalTitle.innerText = 'any -> one'; break;
+        case 2: modalTitle.innerText = 'any -> two'; break;
+        case 3: modalTitle.innerText = 'any -> three'; break;
+        case 10: modalTitle.innerText = 'one -> dead'; break;
+        case 11: modalTitle.innerText = 'one -> two'; break;
+        case 12: modalTitle.innerText = 'one -> three'; break;
+        case 20: modalTitle.innerText = 'two -> dead'; break;
+        case 21: modalTitle.innerText = 'two -> one'; break;
+        case 22: modalTitle.innerText = 'two -> three'; break;
+        case 30: modalTitle.innerText = 'three -> dead'; break;
+        case 31: modalTitle.innerText = 'three -> one'; break;
+        case 32: modalTitle.innerText = 'three -> two'; break;
+    }
     renderList();
     ruleInput.focus();
 }
