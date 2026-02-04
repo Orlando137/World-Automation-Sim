@@ -22,6 +22,9 @@ const modalTitle = document.getElementById('modalTitle');
 const container = document.getElementById('listContainer');
 const ruleInput = document.getElementById('new-rule');
 const addRuleB = document.getElementById('addBtn');
+const color1Input = document.getElementById('color1-input');
+const color2Input = document.getElementById('color2-input');
+const color3Input = document.getElementById('color3-input');
 const cellSize = 4;
 var started = false;
 var playing = false;
@@ -34,59 +37,127 @@ const gridSizeX = Math.floor(animationCanvas.width / cellSize);
 const gridSizeY = Math.floor(animationCanvas.height / cellSize);
 
 const ruleTable = document.getElementById('rule-table');
-const ROWS = 4;
+const ROWS = 5;
 const COLS = 4;
-const masterData = [];
+// masterData stores arrays of rules per cell (each rule value 0-24)
+// Indexed as masterData[row * COLS + col], each entry is an array
+let masterData = Array(ROWS * COLS).fill(null).map(() => []);
 let activeCellId = null;
 
-// --- Button Event Listeners ---
+// --- Button Event Listeners & Animation ---
+
+let animationFrameId = null;
+
+function stepOnce() {
+    // Compute next generation using rules
+    for (let y = 0; y < canvasHeightCells; y++) {
+        for (let x = 0; x < canvasWidthCells; x++) {
+            const here = gridA[idx(x, y)];
+            // Count neighbors by color
+            const counts = new Uint8Array(4);
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    if (dx === 0 && dy === 0) continue;
+                    const c = gridA[idx(x + dx, y + dy)];
+                    if (c < 4) counts[c]++;
+                }
+            }
+            // Count neighbors: number of non-zero neighbors and weighted sum (each neighbor contributes its color value 1/2/3)
+            const neighCount = counts[1] + counts[2] + counts[3];
+            const neighSum = counts[1] * 1 + counts[2] * 2 + counts[3] * 3; // 0..24
+
+            // Columns represent TARGET colors (0=dead,1=color1,2=color2,3=color3).
+            // Row layout now: 0 = any, 1 = dead-specific, 2 = color1, 3 = color2, 4 = color3
+            // Priority: specific color-row (highest), dead-row (middle, applies when here==0), any-row (lowest).
+            let chosenTarget = here; // default preserve
+            let chosenPriority = 0; // 3 = specific, 2 = dead, 1 = any
+            for (let target = 0; target < COLS; target++) {
+                const anyRules = masterData[0 * COLS + target] || [];
+                const deadRules = masterData[1 * COLS + target] || [];
+                const specificRowIndex = (here > 0) ? (here + 1) : -1; // map color 1->2, 2->3, 3->4
+                const specificRules = (specificRowIndex >= 0) ? (masterData[specificRowIndex * COLS + target] || []) : [];
+
+                if (specificRules.includes(neighSum) && 3 >= chosenPriority) {
+                    chosenPriority = 3; chosenTarget = target;
+                }
+                if (here === 0 && deadRules.includes(neighSum) && 2 >= chosenPriority) {
+                    chosenPriority = 2; chosenTarget = target;
+                }
+                if (anyRules.includes(neighSum) && 1 >= chosenPriority) {
+                    chosenPriority = 1; chosenTarget = target;
+                }
+            }
+            gridB[idx(x, y)] = chosenTarget;
+        }
+    }
+    // Swap grids
+    const tmp = gridA; gridA = gridB; gridB = tmp;
+}
+
+function animate() {
+    if (!playing) return;
+    stepOnce();
+    steps++;
+    stepB.textContent = `Step: ${steps}`;
+    grid.draw();
+    animationFrameId = requestAnimationFrame(animate);
+}
 
 pausePlayB.onclick = () => {
-    pausePlayB.textContent = playing ? "Play" : "Pause";
     playing = !playing;
-    if(playing) {
-        // Call Play Animation
+    pausePlayB.textContent = playing ? "Pause" : "Play";
+    if (playing) {
         startResetB.classList.add('hidden');
+        animate();
     } else {
         startResetB.classList.remove('hidden');
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
     }
 }
 
 startResetB.onclick = () => {
-    startResetB.textContent = started ? "Start" : "Reset";
-    started = !started;
-    if(started) {
-        // Call Start Animation
+    if (!started) {
+        // Start animation
+        started = true;
+        steps = 0;
+        stepB.textContent = `Step: ${steps}`;
         playing = true;
         pausePlayB.textContent = "Pause";
         pausePlayB.classList.remove('hidden');
+        startResetB.textContent = "Reset";
         startResetB.classList.add('hidden');
+        animate();
     } else {
-        // Call Reset Animation
+        // Reset animation
+        started = false;
         playing = false;
-        pausePlayB.textContent = "Play";
-        pausePlayB.classList.add('hidden');
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
         steps = 0;
         stepB.textContent = `Step: ${steps}`;
+        startResetB.textContent = "Start";
+        pausePlayB.classList.add('hidden');
+        // Clear grid
+        gridA.fill(0);
+        gridB.fill(0);
+        grid.draw();
     }
 }
 
 stepB.onclick = () => {
-    steps++;
-    stepB.textContent = `Step: ${steps}`;
-    // Call Step Animation
+    if (!started && !playing) {
+        stepOnce();
+        steps++;
+        stepB.textContent = `Step: ${steps}`;
+        grid.draw();
+    }
 }
 
 colorSelectB.onclick = () => {
     switch (addColor) {
-        case 0: addColor = 1; colorSelectB.textContent = 'Red'; break;
-        case 1: addColor = 2; colorSelectB.textContent = 'Yellow'; break;
-        case 2: addColor = 3; colorSelectB.textContent = 'Green'; break;
-        case 3: addColor = 4; colorSelectB.textContent = 'Cyan'; break;
-        case 4: addColor = 5; colorSelectB.textContent = 'Blue'; break;
-        case 5: addColor = 6; colorSelectB.textContent = 'Magenta'; break;
-        case 6: addColor = 7; colorSelectB.textContent = 'White'; break;
-        case 7: addColor = 0; colorSelectB.textContent = 'Black'; break;
+        case 0: addColor = 1; colorSelectB.textContent = 'Color 1'; break;
+        case 1: addColor = 2; colorSelectB.textContent = 'Color 2'; break;
+        case 2: addColor = 3; colorSelectB.textContent = 'Color 3'; break;
+        case 3: addColor = 0; colorSelectB.textContent = 'Black'; break;
     }
 }
 
@@ -112,16 +183,51 @@ const HEIGHT = animationCanvas.height;
 let gridA = new Uint8Array((Math.floor(WIDTH / cellSize)) * (Math.floor(HEIGHT / cellSize)));
 let gridB = new Uint8Array(gridA.length);
 
-const palette = [
+let palette = [
     [0,0,0],
     [255,0,0],
-    [255,225,0],
     [0,255,0],
-    [0,255,225],
-    [0,0,255],
-    [255,0,255],
-    [255,255,255]
+    [0,0,255]
 ];
+
+function parseColorToRGB(val){
+    if (!val) return null;
+    // prefer explicit hex, but handle css names too
+    try {
+        // use canvas context to normalize
+        ctx.fillStyle = val;
+        const norm = ctx.fillStyle; // may become rgb(...) or #rrggbb
+        if (norm.startsWith('#')){
+            const hex = norm.slice(1);
+            const r = parseInt(hex.substring(0,2),16);
+            const g = parseInt(hex.substring(2,4),16);
+            const b = parseInt(hex.substring(4,6),16);
+            return [r,g,b];
+        }
+        if (norm.startsWith('rgb')){
+            const nums = norm.match(/\d+/g).map(n=>parseInt(n,10));
+            return [nums[0], nums[1], nums[2]];
+        }
+    } catch(e){ }
+    return null;
+}
+
+function updatePaletteFromInputs(){
+    // Use the input value if present, otherwise use placeholder
+    const v1 = (color1Input && (color1Input.value || color1Input.placeholder)) || null;
+    const v2 = (color2Input && (color2Input.value || color2Input.placeholder)) || null;
+    const v3 = (color3Input && (color3Input.value || color3Input.placeholder)) || null;
+    const c1 = parseColorToRGB(v1);
+    const c2 = parseColorToRGB(v2);
+    const c3 = parseColorToRGB(v3);
+    if (c1) palette[1] = c1;
+    if (c2) palette[2] = c2;
+    if (c3) palette[3] = c3;
+}
+
+if (color1Input) color1Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); grid.draw(); });
+if (color2Input) color2Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); grid.draw(); });
+if (color3Input) color3Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); grid.draw(); });
 
 const canvasWidthCells = Math.floor(WIDTH / cellSize);
 const canvasHeightCells = Math.floor(HEIGHT / cellSize);
@@ -215,6 +321,7 @@ const grid = {
 };
 
 // initial render
+updatePaletteFromInputs();
 renderGrid();
 
 // ensure canvas updates on user clicks
@@ -231,10 +338,8 @@ animationCanvas.addEventListener('click', (ev) => {
 for (let r = 0; r < ROWS; r++) {
     let row = ruleTable.insertRow();
     for (let c = 0; c < COLS; c++) {
-        const id = `${r}-${c}`;
-        masterData[id] = [];
         let cell = row.insertCell();
-        cell.id = `cell-${id}`;
+        cell.id = `cell-${r}-${c}`;
         cell.innerText = '0';
         cell.onclick = () => openModal(r, c);
     }
@@ -243,21 +348,16 @@ for (let r = 0; r < ROWS; r++) {
 function openModal(r, c) {
     ruleOverlay.classList.add("active");
     activeCellId = `${r}-${c}`;
-    switch (10*r + c) {
-        case 0: modalTitle.innerText = 'any -> dead'; break;
-        case 1: modalTitle.innerText = 'any -> one'; break;
-        case 2: modalTitle.innerText = 'any -> two'; break;
-        case 3: modalTitle.innerText = 'any -> three'; break;
-        case 10: modalTitle.innerText = 'one -> dead'; break;
-        case 11: modalTitle.innerText = 'one -> two'; break;
-        case 12: modalTitle.innerText = 'one -> three'; break;
-        case 20: modalTitle.innerText = 'two -> dead'; break;
-        case 21: modalTitle.innerText = 'two -> one'; break;
-        case 22: modalTitle.innerText = 'two -> three'; break;
-        case 30: modalTitle.innerText = 'three -> dead'; break;
-        case 31: modalTitle.innerText = 'three -> one'; break;
-        case 32: modalTitle.innerText = 'three -> two'; break;
-    }
+    // Rows: 0 = any, 1 = color1 (one), 2 = color2 (two), 3 = color3 (three)
+    // Columns: 0 = dead, 1 = color1, 2 = color2, 3 = color3
+    const labels = [
+        ['any -> dead', 'any -> one', 'any -> two', 'any -> three'],
+        ['dead -> dead', 'dead -> one', 'dead -> two', 'dead -> three'],
+        ['one -> dead', 'one -> one', 'one -> two', 'one -> three'],
+        ['two -> dead', 'two -> one', 'two -> two', 'two -> three'],
+        ['three -> dead', 'three -> one', 'three -> two', 'three -> three']
+    ];
+    modalTitle.innerText = labels[r][c];
     renderList();
     ruleInput.focus();
 }
@@ -265,26 +365,31 @@ function closeModal() {
     ruleOverlay.classList.remove("active");
 }
 function renderList() {
-    const items = masterData[activeCellId];
+    const [r, c] = activeCellId.split('-').map(Number);
+    const idx = r * COLS + c;
+    const rules = masterData[idx];
     container.innerHTML = "";
-    items.forEach((item, index) => {
+    rules.forEach((rule, index) => {
         const div = document.createElement('div');
         div.className = 'list-item';
-        div.innerHTML = `<span>${item}</span><button class="delete-btn" onclick="removeItem(${index})">Delete</button>`;
+        div.innerHTML = `<span>Rule ${index + 1}: <strong>${rule}</strong>/24</span><button class="delete-btn" onclick="removeItem(${index})">Delete</button>`;
         container.appendChild(div);
     });
-    document.getElementById(`cell-${activeCellId}`).innerText = items.length;
+    document.getElementById(`cell-${activeCellId}`).innerText = rules.length;
 }
 function addItem() {
-    if (ruleInput.value.trim()) {
-        masterData[activeCellId].push(ruleInput.value.trim());
+    const num = parseInt(ruleInput.value.trim(), 10);
+    if (!isNaN(num) && num >= 0 && num <= 24) {
+        const [r, c] = activeCellId.split('-').map(Number);
+        const idx = r * COLS + c;
+        masterData[idx].push(num);
         ruleInput.value = "";
         renderList();
     }
 }
 function removeItem(index) {
-    masterData[activeCellId].splice(index, 1);
+    const [r, c] = activeCellId.split('-').map(Number);
+    const idx = r * COLS + c;
+    masterData[idx].splice(index, 1);
     renderList();
 }
-
-// --- Grid and Animation ---
