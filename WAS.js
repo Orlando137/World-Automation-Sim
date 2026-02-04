@@ -39,7 +39,7 @@ const gridSizeY = Math.floor(animationCanvas.height / cellSize);
 const ruleTable = document.getElementById('rule-table');
 const ROWS = 5;
 const COLS = 4;
-// masterData stores arrays of rules per cell (each rule value 0-24)
+// masterData stores arrays of rules per cell (each rule value 1-24)
 // Indexed as masterData[row * COLS + col], each entry is an array
 let masterData = Array(ROWS * COLS).fill(null).map(() => []);
 let activeCellId = null;
@@ -64,7 +64,7 @@ function stepOnce() {
             }
             // Count neighbors: number of non-zero neighbors and weighted sum (each neighbor contributes its color value 1/2/3)
             const neighCount = counts[1] + counts[2] + counts[3];
-            const neighSum = counts[1] * 1 + counts[2] * 2 + counts[3] * 3; // 0..24
+            const neighSum = counts[1] * 1 + counts[2] * 2 + counts[3] * 3; // 1..24
 
             // Columns represent TARGET colors (0=dead,1=color1,2=color2,3=color3).
             // Row layout now: 0 = any, 1 = dead-specific, 2 = color1, 3 = color2, 4 = color3
@@ -144,7 +144,8 @@ startResetB.onclick = () => {
 }
 
 stepB.onclick = () => {
-    if (!started && !playing) {
+    // Allow stepping when not playing (paused or not started). Ignore while animation is running.
+    if (!playing) {
         stepOnce();
         steps++;
         stepB.textContent = `Step: ${steps}`;
@@ -228,6 +229,90 @@ function updatePaletteFromInputs(){
 if (color1Input) color1Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); grid.draw(); });
 if (color2Input) color2Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); grid.draw(); });
 if (color3Input) color3Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); grid.draw(); });
+
+// Parse random spec in format "n1|n2|n3" -> [n1,n2,n3] or null
+function parseRandomSpec(str){
+    if (!str || typeof str !== 'string') return null;
+    const parts = str.split('|').map(s => s.trim());
+    if (parts.length !== 3) return null;
+    const nums = parts.map(n => Number(n));
+    if (nums.some(n => !Number.isInteger(n) || n < 0)) return null;
+    return nums;
+}
+
+// Place random colors according to counts specified in randomI
+reshuffleRandomB.addEventListener('click', ()=>{
+    const spec = parseRandomSpec(randomI.value);
+    if (!spec) {
+        console.error('Random input must be in format "n1|n2|n3" with non-negative integers');
+        return;
+    }
+    const [n1, n2, n3] = spec;
+    const totalRequested = n1 + n2 + n3;
+    const cells = gridA.length;
+    if (totalRequested === 0){
+        // clear the grid
+        gridA.fill(0);
+        gridB.fill(0);
+        grid.draw();
+        return;
+    }
+    if (totalRequested > cells) console.warn(`Requested ${totalRequested} cells, but only ${cells} available: extra placements will be truncated.`);
+
+    // create shuffled indices
+    const indices = Array.from({length: cells}, (_, i) => i);
+    for (let i = cells - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+
+    gridA.fill(0);
+    gridB.fill(0);
+
+    let p = 0;
+    const assignTotal = Math.min(totalRequested, cells);
+    const place = (count, color) => {
+        const end = Math.min(p + count, assignTotal);
+        while (p < end) {
+            gridA[indices[p]] = color;
+            p++;
+        }
+    }
+    place(n1, 1);
+    place(n2, 2);
+    place(n3, 3);
+
+    grid.draw();
+});
+
+// Add a single random rule to masterData and update table
+addRandomB.addEventListener('click', ()=>{
+    const row = Math.floor(Math.random() * ROWS);   // 0..ROWS-1
+    const col = Math.floor(Math.random() * COLS);   // 0..COLS-1
+    const rule = Math.floor(Math.random() * 24) + 1;    // 1..24
+    // Call existing helper which validates and updates the table/modal
+    addRuleToMasterData(`${row}|${col}|${rule}`);
+    console.log(`Added random rule: row=${row}, col=${col}, rule=${rule}`);
+});
+
+// Flush all rules from masterData and update table counts
+flushB.addEventListener('click', ()=>{
+    // Clear each rule list
+    for (let i = 0; i < masterData.length; i++) masterData[i] = [];
+
+    // Update table counters
+    for (let r = 0; r < ROWS; r++){
+        for (let c = 0; c < COLS; c++){
+            const el = document.getElementById(`cell-${r}-${c}`);
+            if (el) el.innerText = '0';
+        }
+    }
+
+    // If rule modal is open, refresh the list
+    if (ruleOverlay.classList.contains('active') && activeCellId) renderList();
+
+    console.log('All rules flushed.');
+});
 
 const canvasWidthCells = Math.floor(WIDTH / cellSize);
 const canvasHeightCells = Math.floor(HEIGHT / cellSize);
@@ -393,3 +478,43 @@ function removeItem(index) {
     masterData[idx].splice(index, 1);
     renderList();
 }
+
+// Function to add a rule to masterData
+function addRuleToMasterData(input) {
+    if (!input || typeof input !== 'string') return;
+    const parts = input.split('|').map(s => s.trim());
+    if (parts.length !== 3) {
+        console.error('Invalid rule format. Expected row|col|rule');
+        return;
+    }
+    const [row, col, rule] = parts.map(Number);
+    if ([row, col, rule].some(n => Number.isNaN(n))) {
+        console.error('Invalid numbers in rule input');
+        return;
+    }
+    if (row < 0 || row >= ROWS || col < 0 || col >= COLS || rule < 0 || rule > 24) {
+        console.error('Rule values out of range');
+        return;
+    }
+
+    const idx = row * COLS + col;
+    const rules = masterData[idx];
+    if (!rules.includes(rule)) rules.push(rule);
+
+    // Update table cell count
+    const cellEl = document.getElementById(`cell-${row}-${col}`);
+    if (cellEl) cellEl.innerText = rules.length;
+
+    // If modal is open and showing this cell, refresh list
+    if (ruleOverlay.classList.contains('active') && activeCellId === `${row}-${col}`) {
+        renderList();
+    }
+}
+
+// Event listener for saveRuleB button
+saveRuleB.addEventListener('click', () => {
+    const ruleInputValue = ruleI.value.trim();
+    if (!ruleInputValue) return;
+    addRuleToMasterData(ruleInputValue);
+    ruleI.value = ''; // Clear input after saving
+});
