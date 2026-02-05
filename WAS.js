@@ -69,7 +69,8 @@ function stepOnce() {
             // Columns represent TARGET colors (0=dead,1=color1,2=color2,3=color3).
             // Row layout now: 0 = any, 1 = dead-specific, 2 = color1, 3 = color2, 4 = color3
             // Priority: specific color-row (highest), dead-row (middle, applies when here==0), any-row (lowest).
-            let chosenTarget = here; // default preserve
+            // In death mode: default to dead (0) unless explicitly kept alive
+            let chosenTarget = isDeathMode ? 0 : here; // default to dead in death mode, otherwise preserve
             let chosenPriority = 0; // 3 = specific, 2 = dead, 1 = any
             for (let target = 0; target < COLS; target++) {
                 const anyRules = masterData[0 * COLS + target] || [];
@@ -162,6 +163,14 @@ colorSelectB.onclick = () => {
     }
 }
 
+const lifeDeathB = document.getElementById('life-death');
+let isDeathMode = false;
+
+lifeDeathB.onclick = () => {
+    isDeathMode = !isDeathMode;
+    lifeDeathB.textContent = isDeathMode ? 'Death' : 'Life';
+}
+
 instructionsB.onclick = () => {
     overlay.classList.add("active");
 }
@@ -240,18 +249,13 @@ function parseRandomSpec(str){
     return nums;
 }
 
-// Place random colors according to counts specified in randomI
-reshuffleRandomB.addEventListener('click', ()=>{
-    const spec = parseRandomSpec(randomI.value);
-    if (!spec) {
-        console.error('Random input must be in format "n1|n2|n3" with non-negative integers');
-        return;
-    }
+// Helper to reshuffle grid according to a parsed spec [n1,n2,n3]
+function reshuffleGrid(spec) {
+    if (!spec) return;
     const [n1, n2, n3] = spec;
     const totalRequested = n1 + n2 + n3;
     const cells = gridA.length;
     if (totalRequested === 0){
-        // clear the grid
         gridA.fill(0);
         gridB.fill(0);
         grid.draw();
@@ -283,6 +287,16 @@ reshuffleRandomB.addEventListener('click', ()=>{
     place(n3, 3);
 
     grid.draw();
+}
+
+// Place random colors according to counts specified in randomI
+reshuffleRandomB.addEventListener('click', ()=>{
+    const spec = parseRandomSpec(randomI.value);
+    if (!spec) {
+        console.error('Random input must be in format "n1|n2|n3" with non-negative integers');
+        return;
+    }
+    reshuffleGrid(spec);
 });
 
 // Add a single random rule to masterData and update table
@@ -293,6 +307,12 @@ addRandomB.addEventListener('click', ()=>{
     // Call existing helper which validates and updates the table/modal
     addRuleToMasterData(`${row}|${col}|${rule}`);
     console.log(`Added random rule: row=${row}, col=${col}, rule=${rule}`);
+
+    // In death mode, also reshuffle the canvas using current random spec
+    if (isDeathMode) {
+        const spec = parseRandomSpec(randomI.value);
+        if (spec) reshuffleGrid(spec);
+    }
 });
 
 // Flush all rules from masterData and update table counts
@@ -316,6 +336,12 @@ flushB.addEventListener('click', ()=>{
 
 const canvasWidthCells = Math.floor(WIDTH / cellSize);
 const canvasHeightCells = Math.floor(HEIGHT / cellSize);
+
+// pixel buffer dimensions and cached ImageData for faster rendering
+const canvasPixelWidth = canvasWidthCells * cellSize;
+const canvasPixelHeight = canvasHeightCells * cellSize;
+let _imgData = null;
+let _pix = null;
 
 function idx(x,y){
     // wrap-around
@@ -358,8 +384,14 @@ function computeNext() {
 
 // render current gridA to canvas
 function renderGrid() {
-    const img = ctx.createImageData(canvasWidthCells * cellSize, canvasHeightCells * cellSize);
-    const pix = img.data;
+    // allocate ImageData once and reuse its pixel buffer
+    if (!_imgData) {
+        _imgData = ctx.createImageData(canvasPixelWidth, canvasPixelHeight);
+        _pix = _imgData.data;
+    }
+    const pix = _pix;
+    const rowPixelStride = canvasPixelWidth; // pixels per canvas row
+
     // expand cell values to pixels
     for (let cy = 0; cy < canvasHeightCells; cy++){
         for (let cx = 0; cx < canvasWidthCells; cx++){
@@ -367,16 +399,17 @@ function renderGrid() {
             const [r,g,b] = palette[c];
             // fill a cellSize x cellSize block
             for (let oy=0; oy<cellSize; oy++){
+                const rowStart = ((cy * cellSize + oy) * rowPixelStride);
                 for (let ox=0; ox<cellSize; ox++){
-                    const px = (cy * cellSize + oy) * (canvasWidthCells * cellSize) + (cx * cellSize + ox);
+                    const px = rowStart + (cx * cellSize + ox);
                     const p = px * 4;
                     pix[p] = r; pix[p+1] = g; pix[p+2] = b; pix[p+3] = 255;
                 }
             }
         }
     }
-    // draw centered in the canvas element (canvas pixel size matches)
-    ctx.putImageData(img, 0, 0);
+    // draw to canvas
+    ctx.putImageData(_imgData, 0, 0);
 }
 
 // provide a minimal grid wrapper used by existing code
