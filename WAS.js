@@ -551,3 +551,17 @@ saveRuleB.addEventListener('click', () => {
     addRuleToMasterData(ruleInputValue);
     ruleI.value = ''; // Clear input after saving
 });
+
+// Event listener for saveAnimationB button
+saveAnimationB.addEventListener('click', () => {
+    const animationName = animationNameI.value.trim();
+    if (!animationName) {
+        alert('Please enter an animation name');
+        return;
+    }
+    // Convert canvas to image data
+    const link = document.createElement('a');
+    link.href = animationCanvas.toDataURL('image/png');
+    link.download = `${animationName}.png`;
+    link.click();
+});
