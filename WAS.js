@@ -25,6 +25,8 @@ const addRuleB = document.getElementById('addBtn');
 const color1Input = document.getElementById('color1-input');
 const color2Input = document.getElementById('color2-input');
 const color3Input = document.getElementById('color3-input');
+const lifeDeathB = document.getElementById('life-death');
+let isDeathMode = false;
 const cellSize = 4;
 var started = false;
 var playing = false;
@@ -39,12 +41,10 @@ const gridSizeY = Math.floor(animationCanvas.height / cellSize);
 const ruleTable = document.getElementById('rule-table');
 const ROWS = 5;
 const COLS = 4;
-// masterData stores arrays of rules per cell (each rule value 1-24)
-// Indexed as masterData[row * COLS + col], each entry is an array
 let masterData = Array(ROWS * COLS).fill(null).map(() => []);
 let activeCellId = null;
 
-// --- Button Event Listeners & Animation ---
+// --- Animation Logic ---
 
 let animationFrameId = null;
 
@@ -62,20 +62,15 @@ function stepOnce() {
                     if (c < 4) counts[c]++;
                 }
             }
-            // Count neighbors: number of non-zero neighbors and weighted sum (each neighbor contributes its color value 1/2/3)
             const neighCount = counts[1] + counts[2] + counts[3];
-            const neighSum = counts[1] * 1 + counts[2] * 2 + counts[3] * 3; // 1..24
+            const neighSum = counts[1] * 1 + counts[2] * 2 + counts[3] * 3;
 
-            // Columns represent TARGET colors (0=dead,1=color1,2=color2,3=color3).
-            // Row layout now: 0 = any, 1 = dead-specific, 2 = color1, 3 = color2, 4 = color3
-            // Priority: specific color-row (highest), dead-row (middle, applies when here==0), any-row (lowest).
-            // In death mode: default to dead (0) unless explicitly kept alive
-            let chosenTarget = isDeathMode ? 0 : here; // default to dead in death mode, otherwise preserve
-            let chosenPriority = 0; // 3 = specific, 2 = dead, 1 = any
+            let chosenTarget = isDeathMode ? 0 : here;
+            let chosenPriority = 0;
             for (let target = 0; target < COLS; target++) {
                 const anyRules = masterData[0 * COLS + target] || [];
                 const deadRules = masterData[1 * COLS + target] || [];
-                const specificRowIndex = (here > 0) ? (here + 1) : -1; // map color 1->2, 2->3, 3->4
+                const specificRowIndex = (here > 0) ? (here + 1) : -1;
                 const specificRules = (specificRowIndex >= 0) ? (masterData[specificRowIndex * COLS + target] || []) : [];
 
                 if (specificRules.includes(neighSum) && 3 >= chosenPriority) {
@@ -91,7 +86,6 @@ function stepOnce() {
             gridB[idx(x, y)] = chosenTarget;
         }
     }
-    // Swap grids
     const tmp = gridA; gridA = gridB; gridB = tmp;
 }
 
@@ -103,6 +97,8 @@ function animate() {
     grid.draw();
     animationFrameId = requestAnimationFrame(animate);
 }
+
+// --- Buttons and UI ---
 
 pausePlayB.onclick = () => {
     playing = !playing;
@@ -163,9 +159,6 @@ colorSelectB.onclick = () => {
     }
 }
 
-const lifeDeathB = document.getElementById('life-death');
-let isDeathMode = false;
-
 lifeDeathB.onclick = () => {
     isDeathMode = !isDeathMode;
     lifeDeathB.textContent = isDeathMode ? 'Death' : 'Life';
@@ -183,13 +176,10 @@ closeB.onclick = () => {
     overlay.classList.remove("active");
 }
 
-// --- Grid Class ---
-
-// --- Animation Grid (inspired by AILife.HTML) ---
+// --- Animation Grid ---
 const WIDTH = animationCanvas.width;
 const HEIGHT = animationCanvas.height;
 
-// Typed arrays for current and next generation
 let gridA = new Uint8Array((Math.floor(WIDTH / cellSize)) * (Math.floor(HEIGHT / cellSize)));
 let gridB = new Uint8Array(gridA.length);
 
@@ -239,7 +229,7 @@ if (color1Input) color1Input.addEventListener('input', ()=>{ updatePaletteFromIn
 if (color2Input) color2Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); grid.draw(); });
 if (color3Input) color3Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); grid.draw(); });
 
-// Parse random spec in format "n1|n2|n3" -> [n1,n2,n3] or null
+// --- Randomization and Rule Management ---
 function parseRandomSpec(str){
     if (!str || typeof str !== 'string') return null;
     const parts = str.split('|').map(s => s.trim());
@@ -249,7 +239,6 @@ function parseRandomSpec(str){
     return nums;
 }
 
-// Helper to reshuffle grid according to a parsed spec [n1,n2,n3]
 function reshuffleGrid(spec) {
     if (!spec) return;
     const [n1, n2, n3] = spec;
@@ -263,7 +252,6 @@ function reshuffleGrid(spec) {
     }
     if (totalRequested > cells) console.warn(`Requested ${totalRequested} cells, but only ${cells} available: extra placements will be truncated.`);
 
-    // create shuffled indices
     const indices = Array.from({length: cells}, (_, i) => i);
     for (let i = cells - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -289,7 +277,6 @@ function reshuffleGrid(spec) {
     grid.draw();
 }
 
-// Place random colors according to counts specified in randomI
 reshuffleRandomB.addEventListener('click', ()=>{
     const spec = parseRandomSpec(randomI.value);
     if (!spec) {
@@ -299,28 +286,22 @@ reshuffleRandomB.addEventListener('click', ()=>{
     reshuffleGrid(spec);
 });
 
-// Add a single random rule to masterData and update table
 addRandomB.addEventListener('click', ()=>{
-    const row = Math.floor(Math.random() * ROWS);   // 0..ROWS-1
-    const col = Math.floor(Math.random() * COLS);   // 0..COLS-1
-    const rule = Math.floor(Math.random() * 24) + 1;    // 1..24
-    // Call existing helper which validates and updates the table/modal
+    const row = Math.floor(Math.random() * ROWS);
+    const col = Math.floor(Math.random() * COLS);
+    const rule = Math.floor(Math.random() * 24) + 1;
     addRuleToMasterData(`${row}|${col}|${rule}`);
     console.log(`Added random rule: row=${row}, col=${col}, rule=${rule}`);
 
-    // In death mode, also reshuffle the canvas using current random spec
     if (isDeathMode) {
         const spec = parseRandomSpec(randomI.value);
         if (spec) reshuffleGrid(spec);
     }
 });
 
-// Flush all rules from masterData and update table counts
 flushB.addEventListener('click', ()=>{
-    // Clear each rule list
     for (let i = 0; i < masterData.length; i++) masterData[i] = [];
 
-    // Update table counters
     for (let r = 0; r < ROWS; r++){
         for (let c = 0; c < COLS; c++){
             const el = document.getElementById(`cell-${r}-${c}`);
@@ -328,7 +309,6 @@ flushB.addEventListener('click', ()=>{
         }
     }
 
-    // If rule modal is open, refresh the list
     if (ruleOverlay.classList.contains('active') && activeCellId) renderList();
 
     console.log('All rules flushed.');
