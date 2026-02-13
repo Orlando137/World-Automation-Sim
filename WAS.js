@@ -176,6 +176,26 @@ closeB.onclick = () => {
     overlay.classList.remove("active");
 }
 
+saveRuleB.addEventListener('click', () => {
+    const ruleInputValue = ruleI.value.trim();
+    if (!ruleInputValue) return;
+    addRuleToMasterData(ruleInputValue);
+    ruleI.value = ''; // Clear input after saving
+});
+
+saveAnimationB.addEventListener('click', () => {
+    const animationName = animationNameI.value.trim();
+    if (!animationName) {
+        alert('Please enter an animation name');
+        return;
+    }
+    // Convert canvas to image data
+    const link = document.createElement('a');
+    link.href = animationCanvas.toDataURL('image/png');
+    link.download = `${animationName}.png`;
+    link.click();
+});
+
 // --- Animation Grid ---
 const WIDTH = animationCanvas.width;
 const HEIGHT = animationCanvas.height;
@@ -328,38 +348,6 @@ function idx(x,y){
     const xx = (x + canvasWidthCells) % canvasWidthCells;
     const yy = (y + canvasHeightCells) % canvasHeightCells;
     return yy * canvasWidthCells + xx;
-}
-
-function computeNext() {
-    for (let y = 0; y < canvasHeightCells; y++) {
-        for (let x = 0; x < canvasWidthCells; x++) {
-            const counts = new Int32Array(8);
-            let neigh = 0;
-            for (let dy=-1; dy<=1; dy++){
-                for (let dx=-1; dx<=1; dx++){
-                    if (dx===0 && dy===0) continue;
-                    const c = gridA[idx(x+dx, y+dy)];
-                    if (c>0){ neigh++; counts[c]++; }
-                }
-            }
-            const here = gridA[idx(x,y)];
-            let newC = 0;
-            if (here === 0) {
-                if (neigh === 3) {
-                    let best = 1, bestCt = counts[1];
-                    for (let c = 2; c < 8; c++){
-                        if (counts[c] > bestCt){ best = c; bestCt = counts[c]; }
-                    }
-                    newC = best;
-                }
-            } else {
-                if (neigh === 2 || neigh === 3) newC = here;
-            }
-            gridB[y * canvasWidthCells + x] = newC;
-        }
-    }
-    // swap
-    const tmp = gridA; gridA = gridB; gridB = tmp;
 }
 
 // render current gridA to canvas
@@ -523,25 +511,3 @@ function addRuleToMasterData(input) {
         renderList();
     }
 }
-
-// Event listener for saveRuleB button
-saveRuleB.addEventListener('click', () => {
-    const ruleInputValue = ruleI.value.trim();
-    if (!ruleInputValue) return;
-    addRuleToMasterData(ruleInputValue);
-    ruleI.value = ''; // Clear input after saving
-});
-
-// Event listener for saveAnimationB button
-saveAnimationB.addEventListener('click', () => {
-    const animationName = animationNameI.value.trim();
-    if (!animationName) {
-        alert('Please enter an animation name');
-        return;
-    }
-    // Convert canvas to image data
-    const link = document.createElement('a');
-    link.href = animationCanvas.toDataURL('image/png');
-    link.download = `${animationName}.png`;
-    link.click();
-});
