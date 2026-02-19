@@ -162,3 +162,17 @@ tr:not(:first-child) td {
     overflow-y: auto;
 }
 
+/* Color input styling */
+#color1-input {
+    background-color: #FF0000;
+    color: white;
+}
+#color2-input {
+    background-color: #00FF00;
+    color: black;
+}
+#color3-input {
+    background-color: #0000FF;
+    color: white;
+}
+

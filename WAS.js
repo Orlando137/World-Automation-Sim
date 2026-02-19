@@ -12,6 +12,7 @@ const saveRuleB = document.getElementById('save-rule');
 const randomI = document.getElementById('random-input');
 const reshuffleRandomB = document.getElementById('reshuffle-random');
 const addRandomB = document.getElementById('add-random');
+const colorB = document.getElementById('color');
 const flushB = document.getElementById('flush');
 const closeB = document.getElementById('closeModal');
 const ctx = animationCanvas.getContext('2d');
@@ -245,9 +246,43 @@ function updatePaletteFromInputs(){
     if (c3) palette[3] = c3;
 }
 
-if (color1Input) color1Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); grid.draw(); });
-if (color2Input) color2Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); grid.draw(); });
-if (color3Input) color3Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); grid.draw(); });
+function updateColorInputBackgrounds(){
+    if (color1Input) {
+        const color = color1Input.value || color1Input.placeholder || '#FF0000';
+        color1Input.style.backgroundColor = color;
+        color1Input.style.color = getContrastColor(color);
+    }
+    if (color2Input) {
+        const color = color2Input.value || color2Input.placeholder || '#00FF00';
+        color2Input.style.backgroundColor = color;
+        color2Input.style.color = getContrastColor(color);
+    }
+    if (color3Input) {
+        const color = color3Input.value || color3Input.placeholder || '#0000FF';
+        color3Input.style.backgroundColor = color;
+        color3Input.style.color = getContrastColor(color);
+    }
+}
+
+function getContrastColor(hexColor) {
+    // Remove # if present
+    const color = hexColor.replace('#', '');
+    
+    // Convert to RGB
+    const r = parseInt(color.substr(0, 2), 16);
+    const g = parseInt(color.substr(2, 2), 16);
+    const b = parseInt(color.substr(4, 2), 16);
+    
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return black for light colors, white for dark colors
+    return luminance > 0.5 ? '#000000' : '#FFFFFF';
+}
+
+if (color1Input) color1Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); updateColorInputBackgrounds(); grid.draw(); });
+if (color2Input) color2Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); updateColorInputBackgrounds(); grid.draw(); });
+if (color3Input) color3Input.addEventListener('input', ()=>{ updatePaletteFromInputs(); updateColorInputBackgrounds(); grid.draw(); });
 
 // --- Randomization and Rule Management ---
 function parseRandomSpec(str){
@@ -309,7 +344,16 @@ reshuffleRandomB.addEventListener('click', ()=>{
 addRandomB.addEventListener('click', ()=>{
     const row = Math.floor(Math.random() * ROWS);
     const col = Math.floor(Math.random() * COLS);
-    const rule = Math.floor(Math.random() * 24) + 1;
+    // Stratified random rule generation: 70% 1-10, 20% 11-20, 10% 21-24
+    const r = Math.random();
+    let rule;
+    if (r < 0.3) {
+        rule = Math.floor(Math.random() * 10) + 1; // 1-10
+    } else if (r < 0.9) {
+        rule = Math.floor(Math.random() * 10) + 11; // 11-20
+    } else {
+        rule = Math.floor(Math.random() * 4) + 21; // 21-24
+    }
     addRuleToMasterData(`${row}|${col}|${rule}`);
     console.log(`Added random rule: row=${row}, col=${col}, rule=${rule}`);
 
@@ -332,6 +376,24 @@ flushB.addEventListener('click', ()=>{
     if (ruleOverlay.classList.contains('active') && activeCellId) renderList();
 
     console.log('All rules flushed.');
+});
+
+colorB.addEventListener('click', ()=>{
+    // Generate random hex colors for each color input
+    const randomColor1 = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+    const randomColor2 = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+    const randomColor3 = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+    
+    color1Input.value = randomColor1;
+    color2Input.value = randomColor2;
+    color3Input.value = randomColor3;
+    
+    // Update the palette and redraw the grid
+    updatePaletteFromInputs();
+    updateColorInputBackgrounds();
+    grid.draw();
+    
+    console.log(`Random colors set: ${randomColor1}, ${randomColor2}, ${randomColor3}`);
 });
 
 const canvasWidthCells = Math.floor(WIDTH / cellSize);
@@ -511,3 +573,6 @@ function addRuleToMasterData(input) {
         renderList();
     }
 }
+
+// Initialize color input backgrounds on page load
+updateColorInputBackgrounds();
