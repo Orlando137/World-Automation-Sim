@@ -18,6 +18,7 @@ const closeB = document.getElementById('closeModal');
 const ctx = animationCanvas.getContext('2d');
 const overlay = document.getElementById('modalOverlay');
 const modalContent = document.getElementById('modalContent');
+const modalText = document.getElementById('modalText');
 const ruleOverlay = document.getElementById('ruleOverlay');
 const modalTitle = document.getElementById('modalTitle');
 const container = document.getElementById('listContainer');
@@ -165,12 +166,25 @@ lifeDeathB.onclick = () => {
     lifeDeathB.textContent = isDeathMode ? 'Death' : 'Life';
 }
 
-instructionsB.onclick = () => {
+function loadModalContent(fileName) {
+    let content;
+    if (fileName === 'instructions.txt') {
+        content = instructionsContent;
+    } else if (fileName === 'help.txt') {
+        content = helpContent;
+    } else {
+        content = 'Content not found.';
+    }
+    modalText.innerHTML = content.replace(/\n/g, '<br>');
     overlay.classList.add("active");
 }
 
+instructionsB.onclick = () => {
+    loadModalContent('instructions.txt');
+}
+
 helpB.onclick = () => {
-    overlay.classList.add("active");
+    loadModalContent('help.txt');
 }
 
 closeB.onclick = () => {
